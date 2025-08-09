@@ -14,6 +14,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core REQUIRED)
 
+find_package(Threads REQUIRED)
+
 # Check for the platform to configure CURL accordingly
 if(WIN32)
     message(STATUS "Building for Windows")
@@ -48,6 +50,9 @@ else()
     message(FATAL_ERROR "Unsupported platform")
 endif()
 
+file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "include/*.h")
+file(GLOB_RECURSE CPP_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
+set(ALL_SOURCES main.cpp ${CPP_SOURCES} ${HEADER_FILES})
 
-add_executable(file_downloader main.cpp)
-target_link_libraries(file_downloader PRIVATE Qt${QT_VERSION_MAJOR}::Core ${CURL_LIB})
+add_executable(file_downloader ${ALL_SOURCES})
+target_link_libraries(file_downloader PRIVATE Qt${QT_VERSION_MAJOR}::Core ${CURL_LIB} Threads::Threads)

@@ -1,43 +1,77 @@
-#include <curl/curl.h>
+#include <QCoreApplication>
+#include <QCommandLineParser>
+#include <QCommandLineOption>
+#include <QDebug>
 
-#include <iostream>
-#include <string>
+#include <include/CurlUtils.h>
 
-constexpr auto CURL_URL = "https://www.wikipedia.org";
-constexpr auto CURL_CERT = "./../file_downloader/external/curl/cacert.pem";
 
-size_t writeCallback(void* contents, size_t objSize, size_t n, void* userPtr)
+static const auto FILE_URL = "http://speedtest.tele2.net/10MB.zip";
+
+
+bool parseCommandLine(QCoreApplication& app, std::string& outputFile, int& parallelTasks, std::string& url)
 {
-    size_t totalSize = objSize * n;
-    std::string* response = static_cast<std::string*>(userPtr);
-    response->append(static_cast<char*>(contents), totalSize);
-    return totalSize;
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Parallel HTTP File Downloader");
+    parser.addHelpOption();
+
+    QCommandLineOption outputOption({"o", "output"}, "Output file", "downloadedFile.txt");
+    parser.addOption(outputOption);
+    QCommandLineOption parallelOption({"p", "parallel"}, "Number of parallel tasks", "4");
+    parser.addOption(parallelOption);
+    parser.addPositionalArgument("url", "The URL to download");
+    parser.process(app);
+
+    outputFile = parser.value(outputOption).toStdString();
+    parallelTasks = parser.value(parallelOption).toInt();
+    QStringList positionalArgs = parser.positionalArguments();
+    url = positionalArgs.isEmpty() ? FILE_URL : positionalArgs.first().toStdString();
+    std::cout << "File URL provided: " << FILE_URL << std::endl;
+
+    if (outputFile.empty())
+    {
+        std::cerr << "Output file must be specified with -o option." << std::endl;
+        parser.showHelp(1);
+        return false;
+    }
+
+    if (parallelTasks <= 0)
+    {
+        std::cerr << "Number of parallel tasks must be greater than 0." << std::endl;
+        parser.showHelp(1);
+        return false;
+    }
+    return true;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    CURL* curl = curl_easy_init();
-    if(!curl)
-    {
-        std::cerr << "Failed to initialize libcurl\n";
+    QCoreApplication app(argc, argv);
+
+    int parallelTasks;
+    std::string url;
+    std::string outputFile;
+    if (!parseCommandLine(app, outputFile, parallelTasks, url)) {
         return 1;
     }
 
-    std::string response;
-    curl_easy_setopt(curl, CURLOPT_URL, CURL_URL);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    curl_easy_setopt(curl, CURLOPT_CAINFO, CURL_CERT);
+    curl_global_init(CURL_GLOBAL_ALL);
 
-    CURLcode res = curl_easy_perform(curl);
-    if(res != CURLE_OK)
+    const auto fileSize = getFileSize(url);
+    if (fileSize <= 0)
     {
-        std::cerr << "Request failed: " << curl_easy_strerror(res) << "\n";
+        std::cerr << "Could not determine file size!" << std::endl;
+        curl_global_cleanup();
+        return 1;
     }
-    else
-    {
-        std::cout << "Response:\n" << response << "\n";
-    }
+    std::cout << "File size: "<< fileSize << " bytes / " << (fileSize / 1024.0 / 1024.0) << " MB" << std::endl;
 
-    curl_easy_cleanup(curl);
+    bool success = downloadFile(url, outputFile, parallelTasks, fileSize);
+    curl_global_cleanup();
+
+    if (success) {
+        std::cout << "File downloaded successfully!" << std::endl;
+    } else {
+        std::cerr << "File download failed!" << std::endl;
+    }
 }
