@@ -1,13 +1,11 @@
-#include <QCoreApplication>
-#include <QCommandLineParser>
 #include <QCommandLineOption>
+#include <QCommandLineParser>
+#include <QCoreApplication>
 #include <QDebug>
 
 #include <include/CurlUtils.h>
 
-
 static const auto FILE_URL = "http://speedtest.tele2.net/10MB.zip";
-
 
 bool parseCommandLine(QCoreApplication& app, std::string& outputFile, int& parallelTasks, std::string& url)
 {
@@ -51,7 +49,8 @@ int main(int argc, char* argv[])
     int parallelTasks;
     std::string url;
     std::string outputFile;
-    if (!parseCommandLine(app, outputFile, parallelTasks, url)) {
+    if (!parseCommandLine(app, outputFile, parallelTasks, url))
+    {
         return 1;
     }
 
@@ -64,14 +63,25 @@ int main(int argc, char* argv[])
         curl_global_cleanup();
         return 1;
     }
-    std::cout << "File size: "<< fileSize << " bytes / " << (fileSize / 1024.0 / 1024.0) << " MB" << std::endl;
+    std::cout << "File size: " << fileSize << " bytes / " << (fileSize / 1024.0 / 1024.0) << " MB"
+              << std::endl;
 
-    bool success = downloadFile(url, outputFile, parallelTasks, fileSize);
+    // Multithreaded approach
+    // std::cout << "Downloading file via threads creation..." << std::endl;
+    // bool success = downloadFileByCreatingThreads(url, outputFile, parallelTasks, fileSize);
+
+    // Multi CURL approach
+    std::cout << "Downloading file via multi CURL creation..." << std::endl;
+    bool success = downloadFileByMultiCURL(url, outputFile, parallelTasks, fileSize);
+
     curl_global_cleanup();
 
-    if (success) {
+    if (success)
+    {
         std::cout << "File downloaded successfully!" << std::endl;
-    } else {
+    }
+    else
+    {
         std::cerr << "File download failed!" << std::endl;
     }
 }
