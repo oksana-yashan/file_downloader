@@ -5,6 +5,8 @@
 
 #include <include/CurlUtils.h>
 
+#include <boost/version.hpp>
+
 static const auto FILE_URL = "http://speedtest.tele2.net/10MB.zip";
 
 bool parseCommandLine(QCoreApplication& app, std::string& outputFile, int& parallelTasks, std::string& url)
@@ -84,4 +86,10 @@ int main(int argc, char* argv[])
     {
         std::cerr << "File download failed!" << std::endl;
     }
+
+    // @TODO: add boost http file fetching
+    std::cout << "Boost version: " << BOOST_VERSION / 100000 << "." // major
+              << BOOST_VERSION / 100 % 1000 << "."                  // minor
+              << BOOST_VERSION % 100                                // patch
+              << std::endl;
 }
