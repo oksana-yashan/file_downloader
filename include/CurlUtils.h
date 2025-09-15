@@ -4,14 +4,8 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
-#include <vector>
 
-struct Chunk
-{
-    uint64_t start;
-    uint64_t end;
-    std::vector<char> data;
-};
+#include <include/Chunk.h>
 
 size_t curlWriteCallback(void* ptr, size_t objSize, size_t n, void* userData);
 

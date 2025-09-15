@@ -3,8 +3,10 @@
 #include <QCoreApplication>
 #include <QDebug>
 
+#include <include/BoostUtils.h>
 #include <include/CurlUtils.h>
 
+#include <boost/asio.hpp>
 #include <boost/version.hpp>
 
 static const auto FILE_URL = "http://speedtest.tele2.net/10MB.zip";
@@ -56,13 +58,13 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    curl_global_init(CURL_GLOBAL_ALL);
+    // curl_global_init(CURL_GLOBAL_ALL);
 
-    const auto fileSize = getFileSize(url);
+    const auto fileSize = getFileSizeByBoost("speedtest.tele2.net", "/10MB.zip");
     if (fileSize <= 0)
     {
         std::cerr << "Could not determine file size!" << std::endl;
-        curl_global_cleanup();
+        // curl_global_cleanup();
         return 1;
     }
     std::cout << "File size: " << fileSize << " bytes / " << (fileSize / 1024.0 / 1024.0) << " MB"
@@ -73,10 +75,14 @@ int main(int argc, char* argv[])
     // bool success = downloadFileByCreatingThreads(url, outputFile, parallelTasks, fileSize);
 
     // Multi CURL approach
-    std::cout << "Downloading file via multi CURL creation..." << std::endl;
-    bool success = downloadFileByMultiCURL(url, outputFile, parallelTasks, fileSize);
+    // std::cout << "Downloading file via multi CURL creation..." << std::endl;
+    // bool success = downloadFileByMultiCURL(url, outputFile, parallelTasks, fileSize);
 
-    curl_global_cleanup();
+    // curl_global_cleanup();
+
+    std::cout << "Downloading file via Boost coroutines..." << std::endl;
+    bool success =
+        downloadFileByBoost("speedtest.tele2.net", "/10MB.zip", "80", outputFile, parallelTasks, fileSize);
 
     if (success)
     {
@@ -86,10 +92,4 @@ int main(int argc, char* argv[])
     {
         std::cerr << "File download failed!" << std::endl;
     }
-
-    // @TODO: add boost http file fetching
-    std::cout << "Boost version: " << BOOST_VERSION / 100000 << "." // major
-              << BOOST_VERSION / 100 % 1000 << "."                  // minor
-              << BOOST_VERSION % 100                                // patch
-              << std::endl;
 }

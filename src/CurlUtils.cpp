@@ -36,21 +36,6 @@ uint64_t getFileSize(const std::string& url)
     return fileSize;
 }
 
-std::vector<Chunk> createChunks(int parallelTasks, uint64_t fileSize)
-{
-    std::vector<Chunk> chunks(parallelTasks);
-    uint64_t chunkSize = fileSize / parallelTasks;
-
-    for (int i = 0; i < parallelTasks; ++i)
-    {
-        chunks[i].start = i * chunkSize;
-        chunks[i].end = (i == parallelTasks - 1) ? (fileSize - 1) : (chunks[i].start + chunkSize - 1);
-        chunks[i].data.reserve(chunks[i].end - chunks[i].start + 1);
-    }
-
-    return chunks;
-}
-
 CURL* createEasyHandle(const std::string& url, Chunk& chunk)
 {
     CURL* easy = curl_easy_init();

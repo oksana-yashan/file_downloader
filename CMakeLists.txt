@@ -6,11 +6,12 @@ project(file_downloader LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
@@ -18,6 +19,7 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core REQUIRED)
 
 find_package(Threads REQUIRED)
 find_package(Boost REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 # Check for the platform to configure CURL accordingly
 if(WIN32)
@@ -58,4 +60,5 @@ file(GLOB_RECURSE CPP_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 set(ALL_SOURCES main.cpp ${CPP_SOURCES} ${HEADER_FILES})
 
 add_executable(file_downloader ${ALL_SOURCES})
-target_link_libraries(file_downloader PRIVATE Qt${QT_VERSION_MAJOR}::Core ${CURL_LIB} Threads::Threads boost::boost)
+target_link_libraries(file_downloader PRIVATE Qt${QT_VERSION_MAJOR}::Core ${CURL_LIB}
+    Threads::Threads boost::boost OpenSSL::SSL OpenSSL::Crypto)
