@@ -12,7 +12,7 @@ size_t curlWriteCallback(void* ptr, size_t objSize, size_t n, void* userData)
     return totalSize;
 }
 
-uint64_t getFileSize(const std::string& url)
+uint64_t getFileSizeByCurl(const std::string& url)
 {
     CURL* curl = curl_easy_init();
     double fileSize = 0;
@@ -82,7 +82,7 @@ bool downloadFileByCreatingThreads(const std::string& url, const std::string& ou
         if (t.joinable())
             t.join();
 
-    return writeFile(outputFile, std::move(chunks));
+    return writeFile(outputFile, std::move(chunks), fileSize);
 }
 
 bool performMultiDownload(CURLM* multiHandle)
@@ -129,22 +129,31 @@ bool downloadFileByMultiCURL(const std::string& url, const std::string& outputFi
     }
     curl_multi_cleanup(multiHandle);
 
-    return success && writeFile(outputFile, std::move(chunks));
+    return success && writeFile(outputFile, std::move(chunks), fileSize);
 }
 
-bool writeFile(const std::string& outputFile, std::vector<Chunk>&& chunks)
+CurlDownloader::~CurlDownloader()
 {
-    std::ofstream out(outputFile, std::ios::binary);
-    if (!out)
-    {
-        std::cerr << "Failed to open output file: " << outputFile << std::endl;
-        return false;
-    }
+    curl_global_cleanup();
+}
 
-    for (const auto& chunk : chunks)
-    {
-        out.write(chunk.data.data(), chunk.data.size());
-    }
+void CurlDownloader::setUp()
+{
+    curl_global_init(CURL_GLOBAL_ALL);
+}
 
-    return true;
+size_t CurlDownloader::getFileSize()
+{
+    return getFileSizeByCurl(url);
+}
+
+bool CurlDownloader::downloadFile(const std::string& outputFile, int parallelTasks, uint64_t fileSize)
+{
+    // Multithreaded approach
+    // std::cout << "Downloading file via threads creation..." << std::endl;
+    // return downloadFileByCreatingThreads(url, outputFile, parallelTasks, fileSize);
+
+    // Multi CURL approach
+    std::cout << "Downloading file via multi CURL creation..." << std::endl;
+    return downloadFileByMultiCURL(url, outputFile, parallelTasks, fileSize);
 }

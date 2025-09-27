@@ -14,4 +14,6 @@ struct Chunk
 
 std::vector<Chunk> createChunks(int parallelTasks, uint64_t fileSize);
 
-bool writeFile(const std::string& outputFile, const std::vector<Chunk>& chunks);
+bool writeFile(const std::string& outputFile, const std::vector<Chunk>& chunks, uint64_t expectedFileSize);
+
+bool checkDownloadedFileSize(const std::string& filePath, uint64_t expectedFileSize);

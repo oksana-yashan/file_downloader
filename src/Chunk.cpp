@@ -1,5 +1,6 @@
 #include <include/Chunk.h>
 
+#include <filesystem>
 #include <iostream>
 
 std::vector<Chunk> createChunks(int parallelTasks, uint64_t fileSize)
@@ -17,7 +18,7 @@ std::vector<Chunk> createChunks(int parallelTasks, uint64_t fileSize)
     return chunks;
 }
 
-bool writeFile(const std::string& outputFile, const std::vector<Chunk>& chunks)
+bool writeFile(const std::string& outputFile, const std::vector<Chunk>& chunks, uint64_t fileSize)
 {
     std::ofstream out(outputFile, std::ios::binary);
     if (!out)
@@ -30,5 +31,22 @@ bool writeFile(const std::string& outputFile, const std::vector<Chunk>& chunks)
     {
         out.write(chunk.data.data(), chunk.data.size());
     }
-    return true;
+    out.close();
+
+    return checkDownloadedFileSize(outputFile, fileSize);
+}
+
+bool checkDownloadedFileSize(const std::string& filePath, uint64_t expectedFileSize)
+{
+    try
+    {
+        const auto actualFileSize = std::filesystem::file_size(filePath);
+        std::cout << "File size is correct: actual=" << actualFileSize << ", expected=" << expectedFileSize << '\n';
+        return expectedFileSize == actualFileSize;
+    }
+    catch (const std::filesystem::filesystem_error& e)
+    {
+        std::cerr << "Filesystem error: " << e.what() << '\n';
+        return false;
+    }
 }

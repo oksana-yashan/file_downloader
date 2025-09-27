@@ -11,6 +11,7 @@
 #include <boost/beast/version.hpp>
 
 #include <iostream>
+#include <regex>
 
 namespace asio = boost::asio;
 namespace beast = boost::beast;
@@ -18,6 +19,9 @@ namespace http = beast::http;
 using tcp = asio::ip::tcp;
 using asio::awaitable;
 using asio::use_awaitable;
+
+static constexpr auto PORT = "80";
+static constexpr auto URL_REGEX = R"(^(?:https?://)?(?:www\.)?([^/]+)(/.*)?$)";
 
 std::uint64_t getFileSizeByBoost(const std::string& host, const std::string& target, const std::string& port,
                                  int maxRetries)
@@ -174,11 +178,42 @@ bool downloadFileByBoost(const std::string& host, const std::string& target, con
             }
         }
 
-        return writeFile(outputFile, chunks);
+        return writeFile(outputFile, chunks, fileSize);
     }
     catch (const std::exception& e)
     {
         std::cout << "Download failed: " << e.what() << std::endl;
         return false;
+    }
+}
+
+BoostDownloader::BoostDownloader(const std::string& url)
+{
+    parseUrl(url, host, target);
+}
+
+size_t BoostDownloader::getFileSize()
+{
+    return getFileSizeByBoost(host, target, PORT, 3);
+}
+
+bool BoostDownloader::downloadFile(const std::string& outputFile, int parallelTasks, uint64_t fileSize)
+{
+    std::cout << "Downloading file via Boost coroutines..." << std::endl;
+    return downloadFileByBoost(host, target, PORT, outputFile, parallelTasks, fileSize, 3);
+}
+
+void BoostDownloader::parseUrl(const std::string& url, std::string& host, std::string& target)
+{
+    std::regex urlRegex(URL_REGEX, std::regex::icase);
+    std::smatch match;
+    if (std::regex_match(url, match, urlRegex))
+    {
+        host = match[1].str();
+        target = match[2].matched ? match[2].str() : "/";
+    }
+    else
+    {
+        std::cerr << "Invalid URL format: " << url << "\n";
     }
 }

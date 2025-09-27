@@ -1,13 +1,23 @@
 #include <include/Chunk.h>
+#include <include/Downloader.h>
 
 #include <boost/asio/awaitable.hpp>
 
-uint64_t getFileSizeByBoost(const std::string& host, const std::string& target,
-                            const std::string& port = "80", int maxRetries = 3);
+#include <string>
 
-boost::asio::awaitable<bool> downloadChunk(const std::string& host, const std::string& port, const std::string& target,
-                              Chunk& chunk);
+class BoostDownloader : public Downloader
+{
+  public:
+    BoostDownloader(const std::string& url);
+    ~BoostDownloader() override {}
 
-bool downloadFileByBoost(const std::string& host, const std::string& target, const std::string& port,
-                         const std::string& outputFile, int parallelTasks, uint64_t fileSize,
-                         int maxRetries = 3);
+    void setUp() override {}
+    size_t getFileSize() override;
+    bool downloadFile(const std::string& outputFile, int parallelTasks, std::uint64_t fileSize) override;
+
+  private:
+    void parseUrl(const std::string& url, std::string& host, std::string& target);
+
+    std::string host;
+    std::string target;
+};

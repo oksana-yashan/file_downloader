@@ -9,7 +9,7 @@
 #include <boost/asio.hpp>
 #include <boost/version.hpp>
 
-static const auto FILE_URL = "http://speedtest.tele2.net/10MB.zip";
+static constexpr auto FILE_URL = "http://speedtest.tele2.net/10MB.zip";
 
 bool parseCommandLine(QCoreApplication& app, std::string& outputFile, int& parallelTasks, std::string& url)
 {
@@ -58,32 +58,19 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // curl_global_init(CURL_GLOBAL_ALL);
+    std::unique_ptr<Downloader> downloader = std::make_unique<BoostDownloader>(url);
+    //std::unique_ptr<Downloader> downloader = std::make_unique<CurlDownloader>(url);
 
-    const auto fileSize = getFileSizeByBoost("speedtest.tele2.net", "/10MB.zip");
+    const auto fileSize = downloader->getFileSize();
     if (fileSize <= 0)
     {
         std::cerr << "Could not determine file size!" << std::endl;
-        // curl_global_cleanup();
         return 1;
     }
     std::cout << "File size: " << fileSize << " bytes / " << (fileSize / 1024.0 / 1024.0) << " MB"
               << std::endl;
 
-    // Multithreaded approach
-    // std::cout << "Downloading file via threads creation..." << std::endl;
-    // bool success = downloadFileByCreatingThreads(url, outputFile, parallelTasks, fileSize);
-
-    // Multi CURL approach
-    // std::cout << "Downloading file via multi CURL creation..." << std::endl;
-    // bool success = downloadFileByMultiCURL(url, outputFile, parallelTasks, fileSize);
-
-    // curl_global_cleanup();
-
-    std::cout << "Downloading file via Boost coroutines..." << std::endl;
-    bool success =
-        downloadFileByBoost("speedtest.tele2.net", "/10MB.zip", "80", outputFile, parallelTasks, fileSize);
-
+    bool success = downloader->downloadFile(outputFile, parallelTasks, fileSize);
     if (success)
     {
         std::cout << "File downloaded successfully!" << std::endl;
